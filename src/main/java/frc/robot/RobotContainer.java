@@ -39,6 +39,12 @@ public class RobotContainer {
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
+    // Vision-align tuning
+    private static final double kVisionKP = 1.0; // proportional gain for rotation (rad/s per rad error)
+    private static final double kVisionDeadbandDeg = 1.0; // degrees of allowable error
+    private static final double kApproachTaThreshold = 2.0; // target area threshold to start/stop approaching (percent)
+    private static final double kApproachSpeed = 0.25; // m/s forward approach speed
+
     public RobotContainer() {
         configureBindings();
     }
@@ -76,6 +82,33 @@ public class RobotContainer {
 
         // reset the field-centric heading on left bumper press
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+
+        // limelight test to align on right bumper
+        joystick.rightBumper().whileTrue(
+            drivetrain.applyRequest(() -> {
+                boolean hasTarget = LimelightHelpers.getTV("limelight-a");
+                double rotRate = 0.0;
+                double vx = 0.0;
+                double vy = 0.0;
+
+                if (hasTarget) {
+                    double txDeg = LimelightHelpers.getTX("limelight-a");
+                    if (Math.abs(txDeg) > kVisionDeadbandDeg) {
+                        // convert degrees error to radians and apply proportional gain
+                        double errRad = Math.toRadians(txDeg);
+                        rotRate = -kVisionKP * errRad; // negative to rotate toward target
+                    }
+
+                    // small approach behavior based on target area
+                    double ta = LimelightHelpers.getTA("limelight-a");
+                    if (ta > 0 && ta < kApproachTaThreshold) {
+                        vx = -kApproachSpeed; // drive field x forward to approach target
+                    }
+                }
+
+                return drive.withVelocityX(vx).withVelocityY(vy).withRotationalRate(rotRate);
+            })
+        );
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }
