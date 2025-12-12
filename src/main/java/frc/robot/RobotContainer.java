@@ -102,14 +102,13 @@ public class RobotContainer {
                 double vy = 0.0;
 
                 if (hasTarget) {
-                    double txDeg = LimelightHelpers.getTX("limelight-a");
+                    double txDeg = tx;
                     if (Math.abs(txDeg) > kVisionDeadbandDeg) {                        
                         double errRad = Math.toRadians(txDeg);
                         rotRate = -kVisionKP * errRad;
                     }
 
-                    
-                    double ta = LimelightHelpers.getTA("limelight-a");
+                    ta = LimelightHelpers.getTA("limelight-a");
                     if (ta > 0 && ta < kApproachTaThreshold) {
                         vx = -kApproachSpeed; 
                     }
