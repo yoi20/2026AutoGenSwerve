@@ -616,7 +616,7 @@ public class LimelightHelpers {
     static boolean profileJSON = false;
 
     static final String sanitizeName(String name) {
-        if (name == "" || name == null) {
+        if (name == null || name.isEmpty()) {
             return "limelight";
         }
         return name;
@@ -932,7 +932,7 @@ public class LimelightHelpers {
      * @return True if a valid target is present, false otherwise
      */
     public static boolean getTV(String limelightName) {
-        return 1.0 == getLimelightNTDouble(limelightName, "tv");
+        return getLimelightNTDouble(limelightName, "tv") >= 1.0;
     }
 
     /**

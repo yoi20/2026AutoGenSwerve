@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
@@ -84,25 +85,33 @@ public class RobotContainer {
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         // limelight test to align on right bumper
+        joystick.rightBumper().onTrue(Commands.runOnce(() -> System.out.println("Right bumper pressed (onTrue)")));
         joystick.rightBumper().whileTrue(
             drivetrain.applyRequest(() -> {
-                boolean hasTarget = LimelightHelpers.getTV("limelight-a");
+                double tv = LimelightHelpers.getLimelightNTDouble("limelight-a", "tv");
+                double tx = LimelightHelpers.getTX("limelight-a");
+                double ta = LimelightHelpers.getTA("limelight-a");
+                System.out.printf("[Limelight] RB held -> tv=%.2f tx=%.2f ta=%.2f\n", tv, tx, ta);
+                SmartDashboard.putNumber("Limelight/tv", tv);
+                SmartDashboard.putNumber("Limelight/tx", tx);
+                SmartDashboard.putNumber("Limelight/ta", ta);
+
+                boolean hasTarget = tv >= 1.0;
                 double rotRate = 0.0;
                 double vx = 0.0;
                 double vy = 0.0;
 
                 if (hasTarget) {
                     double txDeg = LimelightHelpers.getTX("limelight-a");
-                    if (Math.abs(txDeg) > kVisionDeadbandDeg) {
-                        // convert degrees error to radians and apply proportional gain
+                    if (Math.abs(txDeg) > kVisionDeadbandDeg) {                        
                         double errRad = Math.toRadians(txDeg);
-                        rotRate = -kVisionKP * errRad; // negative to rotate toward target
+                        rotRate = -kVisionKP * errRad;
                     }
 
-                    // small approach behavior based on target area
+                    
                     double ta = LimelightHelpers.getTA("limelight-a");
                     if (ta > 0 && ta < kApproachTaThreshold) {
-                        vx = -kApproachSpeed; // drive field x forward to approach target
+                        vx = -kApproachSpeed; 
                     }
                 }
 
